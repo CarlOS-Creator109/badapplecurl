@@ -12,9 +12,11 @@ RAW_URL="https://raw.githubusercontent.com/CarlOS-Creator109/badapplecurl/main/b
 TMP_SCRIPT="/tmp/badapple.sh"
 
 RUN_HERE=0
+SKIP_CHECKS=0
 for arg in "$@"; do
   case "$arg" in
-    --here) RUN_HERE=1 ;;
+    --here)         RUN_HERE=1 ;;
+    --skip-checks)  SKIP_CHECKS=1 ;;
   esac
 done
 
@@ -54,12 +56,14 @@ ensure_cmd() {
   esac
 }
 
-# Dependencias basicas que usa badapple.sh
-ensure_cmd curl
-ensure_cmd gunzip gzip
-ensure_cmd base64 coreutils
-if ! command -v ffplay >/dev/null 2>&1 && ! command -v ffmpeg >/dev/null 2>&1; then
-  ensure_cmd ffplay ffmpeg
+if [ "$SKIP_CHECKS" -eq 0 ]; then
+  # Dependencias basicas que usa badapple.sh
+  ensure_cmd curl
+  ensure_cmd gunzip gzip
+  ensure_cmd base64 coreutils
+  if ! command -v ffplay >/dev/null 2>&1 && ! command -v ffmpeg >/dev/null 2>&1; then
+    ensure_cmd ffplay ffmpeg
+  fi
 fi
 
 echo "Descargando badapple.sh..."
@@ -72,7 +76,7 @@ if [ "$RUN_HERE" -eq 1 ]; then
 fi
 
 # Terminal grafica: prueba xterm, luego xfce4-terminal, si no hay ninguna ofrece instalar xterm
-if ! command -v xterm >/dev/null 2>&1 && ! command -v xfce4-terminal >/dev/null 2>&1; then
+if [ "$SKIP_CHECKS" -eq 0 ] && ! command -v xterm >/dev/null 2>&1 && ! command -v xfce4-terminal >/dev/null 2>&1; then
   echo "No se encontro xterm ni xfce4-terminal."
   ensure_cmd xterm
 fi
