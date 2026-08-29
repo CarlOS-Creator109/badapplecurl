@@ -6,6 +6,10 @@
 #   xterm -fa monospace -fs 12 -geometry 81x29 -e bash badapple.sh
 
 FRAME_US=83333
+# Compensa el arranque del reproductor de audio (ffplay/ffmpeg tardan un poco en sonar
+# de verdad tras lanzarse). Si el video sigue adelantandose, sube este valor; si el
+# audio se adelanta, bajalo. Esta en segundos.
+AUDIO_STARTUP_DELAY=0.20
 
 TMPDIR=$(mktemp -d)
 AUDIO_PID=""
@@ -61560,7 +61564,7 @@ qqqqqqqqqqqqqqqqqg==
 AUDIO_EOF
 
 readarray -d $'\1' -t FRAMES < <(base64 -d <<'VIDEO_EOF' | gunzip
-H4sIAE3PkmoC/+y9W7LkuI4sautXo9Bw45eA2R3gHsk9XblWhB6UBIAACSm8LKytd1WmCOcTcLz+
+H4sIAD/QkmoC/+y9W7LkuI4sautXo9Bw45eA2R3gHsk9XblWhB6UBIAACSm8LKytd1WmCOcTcLz+
 9/+9/vdlv+l/wAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzMwAzM434/WGdgBmZg
 BmZgBmZgBmZgBmZgBmZgBmZgBmZgBmZgBmZgBmZgBmZgBmb46LDOwAzMwAzMwAzMwAzMwAzMwAzM
 wAzMwAzMwAzMwAzMwAzMwAzMwAwfHdYZmIEZmIEZmIEZmIEZmIEZmIEZmIEZmIEZmIEZmIEZmIEZ
@@ -69357,6 +69361,8 @@ elif command -v ffmpeg >/dev/null 2>&1; then
 else
   echo "(No se encontro ffmpeg/ffplay -- solo animacion, sin audio)"
 fi
+
+sleep "$AUDIO_STARTUP_DELAY"
 
 get_epoch_us
 START_US=$EPOCH_US
