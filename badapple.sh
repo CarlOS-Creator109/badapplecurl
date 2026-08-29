@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Bad Apple en tu terminal (grises 4-bit, bloques Unicode, 81x29, sync corregido, audio via ffmpeg) -- COS-Mods (Carlos)
-# Uso: curl -s <raw_url> | bash
-# Para xterm del tamano exacto: xterm -geometry 81x29 -e bash badapple.sh
-# Requiere ffmpeg (ffplay) para el audio.
+# Bad Apple en tu terminal (81x29, grises 4-bit, sync corregido, audio via ffmpeg) -- COS-Mods (Carlos)
+# Uso recomendado (evita desincronia si la red va lenta):
+#   curl -s <raw_url> -o badapple.sh && bash badapple.sh
+# xterm con tamano exacto:
+#   xterm -fa monospace -fs 12 -geometry 81x29 -e bash badapple.sh
 
 FRAME_US=83333
 
@@ -29,6 +30,9 @@ if [ "$COLS" -lt 81 ] || [ "$LINES" -lt 29 ]; then
   sleep 3
 fi
 
+echo "Cargando..."
+
+# Se decodifica el audio a disco (no se reproduce todavia)
 base64 -d <<'AUDIO_EOF' > "$TMPDIR/audio.mp3" 2>/dev/null
 SUQzBAAAAAABClRYWFgAAAASAAADbWFqb3JfYnJhbmQAaXNvbQBUWFhYAAAAEwAAA21pbm9yX3Zl
 cnNpb24ANTEyAFRYWFgAAAAkAAADY29tcGF0aWJsZV9icmFuZHMAaXNvbWF2MDFpc28ybXA0MQBU
@@ -61556,21 +61560,9 @@ qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 qqqqqqqqqqqqqqqqqg==
 AUDIO_EOF
 
-if command -v ffplay >/dev/null 2>&1; then
-  ffplay -nodisp -autoexit -loglevel quiet -volume 100 "$TMPDIR/audio.mp3" >/dev/null 2>&1 &
-  AUDIO_PID=$!
-elif command -v ffmpeg >/dev/null 2>&1; then
-  # Sin ffplay: ffmpeg empuja el audio decodificado directo a ALSA, y si falla intenta Pulse
-  ffmpeg -loglevel quiet -re -i "$TMPDIR/audio.mp3" -f alsa default >/dev/null 2>&1 \
-    || ffmpeg -loglevel quiet -re -i "$TMPDIR/audio.mp3" -f pulse default >/dev/null 2>&1 &
-  AUDIO_PID=$!
-else
-  echo "(No se encontro ffmpeg/ffplay -- solo animacion, sin audio)"
-  sleep 1
-fi
-
+# Se decodifica TODO el video a memoria antes de arrancar nada -- esto es lo pesado
 readarray -d $'\1' -t FRAMES < <(base64 -d <<'VIDEO_EOF' | gunzip
-H4sIAJzMkmoC/+x9WbLjuo5t5K9G4amqTzY/EiPeAO9IXh3L1KashuhIyztZsaPi1ql7TEAkQWBh
+H4sIAIjNkmoC/+x9WbLjuo5t5K9G4amqTzY/EiPeAO9IXh3L1KashuhIyztZsaPi1ql7TEAkQWBh
 Afjf//v7v3/sr/pf0bnoXHQuOhedi85F56Jz0bnoXHQuOhedi85F56Jz0bnoXHQuOhedi85F56Jz
 0bno/Lm/P2Wfi85F56Jz0bnoXHQuOhedi85F56Jz0bnoXHQuOhedi85F56Jz0bnoXHQuOhedi85F
 55KjK/tcdC46F52LzkXnonPRuehcdC46F52LzkXnonPRuehcdC46F52LzkXnonPRuehcdC45urLP
@@ -74076,6 +74068,18 @@ get_epoch_us() {
 
 tput civis 2>/dev/null
 clear
+
+# Con todo ya en memoria, arrancamos audio y el reloj de sync casi en el mismo instante
+if command -v ffplay >/dev/null 2>&1; then
+  ffplay -nodisp -autoexit -loglevel quiet -volume 100 "$TMPDIR/audio.mp3" >/dev/null 2>&1 &
+  AUDIO_PID=$!
+elif command -v ffmpeg >/dev/null 2>&1; then
+  ffmpeg -loglevel quiet -re -i "$TMPDIR/audio.mp3" -f alsa default >/dev/null 2>&1 \
+    || ffmpeg -loglevel quiet -re -i "$TMPDIR/audio.mp3" -f pulse default >/dev/null 2>&1 &
+  AUDIO_PID=$!
+else
+  echo "(No se encontro ffmpeg/ffplay -- solo animacion, sin audio)"
+fi
 
 get_epoch_us
 START_US=$EPOCH_US
